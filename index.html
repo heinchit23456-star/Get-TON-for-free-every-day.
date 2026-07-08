@@ -114,19 +114,16 @@
     <!-- === Contest / Leaderboard Tab === -->
     <div id="tab-leaderboard" class="tab-content">
       <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #3bccff; text-align: center; text-transform: uppercase; letter-spacing: 1px;">🏆 REFERRAL CONTEST</h2>
-      
-      <!-- 1. မိမိရဲ့ referral count ပြသမယ့် Box -->
+
       <div class="admin-box" style="text-align: center; margin-bottom: 14px;">
         <p style="font-size: 0.9rem; color: #8a92b0;">👤 YOUR REFERRAL COUNT</p>
         <div style="font-size: 2rem; font-weight: bold; color: #3bccff;" id="myReferralCount">0</div>
       </div>
 
-      <!-- 2. Dynamic ပြောင်းလဲမယ့် Leaderboard Container -->
       <div id="leaderboardContainer" style="background: #13142b; border: 1px solid #232540; border-radius: 18px; padding: 25px 15px; text-align: center; margin-bottom: 14px; box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.02);">
         <p style="text-align:center; color:#8a92b0;">⏳ Loading Leaderboard...</p>
       </div>
 
-      <!-- 3. Contest Rules Info -->
       <div class="admin-box" style="font-size: 0.8rem; color: #8a92b0; line-height: 1.6; padding: 15px; background: #13142b; border: 1px solid #232540; border-radius: 12px;">
         <b style="color: #3bccff; font-size: 0.85rem; display: block; margin-bottom: 8px;">📌 CONTEST RULES & INFO</b>
         • <b>Prize Pool:</b> 1st Place: <span style="color:#ffd700; font-weight:bold;">1.0 TON</span> | 2nd Place: <span style="color:#fff; font-weight:bold;">0.3 TON</span> | 3rd Place: <span style="color:#cd7f32; font-weight:bold;">0.1 TON</span><br>
@@ -166,7 +163,6 @@
 
   </div>
 
-
   <script>
     // ======================== သင်၏ Netlify Site URL ထည့်ပါ ========================
     const NETLIFY_URL = 'https://golden-cendol-4dc211.netlify.app'; 
@@ -175,7 +171,6 @@
     const ADSGRAM_BLOCK_ID_NEW = "int-37376"; 
     const ADSTERRA_DIRECT_LINK = "https://potterynaggingformerly.com/n6fbhya4qv?key=91fce56af9fe97ff979f42cca26e4314";
     const REWARD_PER_AD = 0.0001;
-    const REFERRAL_REWARD = 0.01; 
     const MAX_DAILY_EARN = 50;   
     const MAX_DAILY_TASKS = 500; 
     const FETCH_TIMEOUT = 15000;
@@ -202,18 +197,10 @@
       document.getElementById('walletBalance').innerText = userBalance.toFixed(4);
     }
 
-    function addBalance(amount, source = 'ad') {
+    function addBalance(amount) {
       userBalance = Math.max(0, userBalance + amount);
       safeSetItem(getStorageKey('app_usdt_balance'), userBalance.toString());
       updateBalanceDisplay();
-      if (source === 'referral') {
-        const msgEl = document.getElementById('refRewardMessage');
-        if (msgEl) {
-          msgEl.style.display = 'block';
-          msgEl.innerText = `🎉 Invitation bonus +${amount} USDT received.`;
-          setTimeout(() => { msgEl.style.display = 'none'; }, 5000);
-        }
-      }
     }
 
     function deductBalance(amount) {
@@ -227,6 +214,60 @@
     function getTodayDateString() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    }
+
+    // Server က Balance ကိုယူပြီး Local Balance နဲ့ စုပေါင်းပြသပေးမည့် လုပ်ဆောင်ချက်
+    async function fetchServerBalance() {
+      try {
+        const resp = await fetch(`${NETLIFY_URL}/.netlify/functions/get-balance?userId=${currentUserId}`);
+        const data = await resp.json();
+        if (data.success) {
+          const localBalance = parseFloat(safeGetItem(getStorageKey('app_usdt_balance'), '0')) || 0;
+          userBalance = localBalance + (data.balance || 0);
+          updateBalanceDisplay();
+        }
+      } catch (e) {
+        console.log('Error fetching server balance:', e);
+      }
+    }
+
+    async function processReferral(referrerId) {
+      if (referrerId === currentUserId) return;
+      const processedKey = getStorageKey('app_referral_processed');
+      if (safeGetItem(processedKey, '') === referrerId) return;
+
+      try {
+        const refereeUsername = (window.Telegram?.WebApp?.initDataUnsafe?.user?.username)
+                                ? "@" + window.Telegram.WebApp.initDataUnsafe.user.username
+                                : "Anonymous";
+
+        const resp = await fetch(`${NETLIFY_URL}/.netlify/functions/leaderboard`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            referrerId: referrerId,       
+            refereeId: currentUserId,     
+            refereeUsername: refereeUsername
+          })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          safeSetItem(processedKey, referrerId); 
+          
+          // အောင်မြင်ရင် Referral count တိုးမြှင့်မှုကို Local Storage မှာပါ ထိန်းသိမ်းမည်
+          const countKey = getStorageKey('app_referral_count');
+          const currentCount = parseInt(safeGetItem(countKey, '0'), 10);
+          safeSetItem(countKey, (currentCount + 1).toString());
+          updateMyReferralCount();
+
+          alert('✅ Referral successful! Reward recorded on server.');
+          await fetchServerBalance(); // Balance ကို Server နှင့် ချက်ချင်း Sync လုပ်မည်
+        } else {
+          alert('⚠️ ' + (data.message || 'Already referred.'));
+        }
+      } catch (e) {
+        console.log('Referral error:', e);
+      }
     }
 
     function resetDailyCountIfNeeded() {
@@ -286,36 +327,6 @@
       else if (status === 'error') { indicator.classList.add('sdk-error'); if(hint) hint.style.display = 'block'; }
     }
 
-    async function processReferral(referrerId) {
-      if (referrerId === currentUserId) return;
-      const processedKey = getStorageKey('app_referral_processed');
-      if (safeGetItem(processedKey, '') === referrerId) return;
-      safeSetItem(processedKey, referrerId);
-      addBalance(REFERRAL_REWARD, 'referral');
-
-      const countKey = getStorageKey('app_referral_count');
-      const currentCount = parseInt(safeGetItem(countKey, '0'), 10);
-      safeSetItem(countKey, (currentCount + 1).toString());
-
-      try {
-        let currentUsername = "Anonymous";
-        if (window.Telegram?.WebApp?.initDataUnsafe?.user?.username) {
-          currentUsername = "@" + window.Telegram.WebApp.initDataUnsafe.user.username;
-        }
-        
-        await fetch(`${NETLIFY_URL}/.netlify/functions/leaderboard`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            userId: referrerId, 
-            username: currentUsername
-          })
-        });
-      } catch (e) {
-        console.log('Leaderboard update error:', e);
-      }
-    }
-
     async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -347,7 +358,7 @@
     }
 
     function setAdsgramButtonPending(pending) {
-      isAdsgramPending = pending; // ✅ ဒီစာကြောင်းက အဓိက ပြင်ဆင်ချက်ပါ။ pending state ကို update လုပ်ပေးပါတယ်။
+      isAdsgramPending = pending; 
       const btnOld = document.getElementById('adsgramBtn');
       const btnNew = document.getElementById('adsgramBtnNew');
       const txtOld = document.getElementById('adsgramBtnText');
@@ -438,42 +449,37 @@
       const amountInput = document.getElementById('withdrawAmount');
       const addressInput = document.getElementById('tonAddress');
       const btn = document.getElementById('withdrawBtn');
-      
+
       amountInput.classList.remove('input-error');
       addressInput.classList.remove('input-error');
-      
+
       const amount = parseFloat(amountInput.value);
       const address = addressInput.value.trim();
-      
+
       if (isNaN(amount) || amount < 0.1) {
         showStatus('withdrawStatus', "❌ Minimum withdrawal amount is 0.1 USDT.", true);
         amountInput.classList.add('input-error');
         amountInput.focus();
         return;
       }
-      
+
       if (!address) {
         showStatus('withdrawStatus', "❌ Please enter your TON address.", true);
         addressInput.classList.add('input-error');
         addressInput.focus();
         return;
       }
-      
+
       if (!isValidTonAddress(address)) {
         showStatus('withdrawStatus', "❌ Invalid TON address format.\nPlease use address starting with EQ or UQ (e.g., EQ...)", true, 8000);
         addressInput.classList.add('input-error');
         addressInput.focus();
         return;
       }
-      
+
       if (amount > userBalance) {
         showStatus('withdrawStatus', `❌ Insufficient balance. You have ${userBalance.toFixed(4)} USDT.`, true);
         amountInput.classList.add('input-error');
-        return;
-      }
-
-      if (!NETLIFY_URL || NETLIFY_URL === 'https://your-site.netlify.app') {
-        showStatus('withdrawStatus', '❌ NETLIFY_URL not set. Please configure your Netlify URL in the code.', true, 8000);
         return;
       }
 
@@ -481,16 +487,16 @@
       btn.disabled = true;
       btn.innerText = "⏳ Sending payment...";
       showStatus('withdrawStatus', "⏳ Processing...", false, 0);
-      
+
       try {
         const resp = await fetchWithTimeout(`${NETLIFY_URL}/.netlify/functions/withdraw`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ address, amount })
         }, FETCH_TIMEOUT);
-        
+
         const data = await resp.json();
-        
+
         if (data.success) {
           deductBalance(amount);
           showStatus('withdrawStatus', `✅ Withdrawal sent! Payout ID: ${data.payout_id}`, false, 10000);
@@ -524,25 +530,25 @@
     async function loadLeaderboard() {
       const container = document.getElementById('leaderboardContainer');
       if (!container) return;
-      
+
       container.innerHTML = '<p style="text-align:center; color:#8a92b0;">⏳ Loading Leaderboard...</p>';
-      
+
       try {
         const resp = await fetch(`${NETLIFY_URL}/.netlify/functions/leaderboard`);
         const data = await resp.json();
-        
+
         if (!data.success || !data.leaderboard || data.leaderboard.length === 0) {
           container.innerHTML = '<p style="text-align:center; color:#8a92b0;">🚀 No data yet. Be the first!</p>';
           return;
         }
-        
+
         const lb = data.leaderboard; 
-        
+
         let html = `
           <p style="color: #8a92b0; font-size: 0.85rem; margin-bottom: 25px;">🥇 Top Invite Winners of the Month 🥇</p>
           <div style="display: flex; justify-content: space-around; align-items: flex-end; margin-top: 10px;">
         `;
-        
+
         if (lb[1]) {
           html += `
             <div style="display: flex; flex-direction: column; align-items: center; width: 30%;">
@@ -554,7 +560,7 @@
             </div>
           `;
         }
-        
+
         if (lb[0]) {
           html += `
             <div style="display: flex; flex-direction: column; align-items: center; width: 35%; position: relative; bottom: 5px;">
@@ -566,7 +572,7 @@
             </div>
           `;
         }
-        
+
         if (lb[2]) {
           html += `
             <div style="display: flex; flex-direction: column; align-items: center; width: 30%;">
@@ -578,7 +584,7 @@
             </div>
           `;
         }
-        
+
         html += `</div>`;
         container.innerHTML = html;
       } catch (e) {
@@ -602,7 +608,7 @@
       });
     }
 
-    function initApp() {
+    async function initApp() {
       if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.ready(); 
         window.Telegram.WebApp.expand();
@@ -630,7 +636,9 @@
         } catch (e) { alert('❌ Copy failed'); }
       });
 
-      updateBalanceDisplay();
+      // App စဖွင့်ချိန်တွင် Server မှ Balance အားဆွဲယူပြီး Local balance နှင့် ပေါင်းစပ်မည်
+      await fetchServerBalance();
+      
       resetDailyCountIfNeeded();
       updateDailyCountDisplay();
       setupTabNavigation();
@@ -640,11 +648,7 @@
     }
 
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', initApp) : initApp();
-    
-    
-    
   </script>  
-  
   <script src="https://potterynaggingformerly.com/fd/91/7c/fd917cd3ca85a253cebb9a05277d1e16.js"></script>
 </body>
 </html>
