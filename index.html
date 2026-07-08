@@ -48,9 +48,10 @@
 <body>
   <div class="container">
     <div class="alert-box-dark">
-        <span class="moving-text" id="topMarqueeText">🙋🏻‍♂️Yoka 🎁Grid 📺Zenith_bot🤑</span>
+        <span class="moving-text" id="topMarqueeText">🙋🏻‍♂️Yoka Get TON for free every day🎁</span>
     </div>
 
+    <!-- === Tasks Tab === -->
     <div id="tab-tasks" class="tab-content active">
       <h2 style="font-size: 1.2rem; margin-bottom: 8px; color: #3bccff;">📺 Watch & Earn</h2>
       <div class="admin-box" style="padding: 12px; font-size: 0.85rem;">
@@ -96,6 +97,7 @@
       </div>
     </div>
 
+    <!-- === Refs Tab === -->
     <div id="tab-refs" class="tab-content">
       <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #3bccff;">👥 Referral Program</h2>
       <div class="referral-console">
@@ -109,6 +111,32 @@
       </div>
     </div>
 
+    <!-- === Contest / Leaderboard Tab === -->
+    <div id="tab-leaderboard" class="tab-content">
+      <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #3bccff; text-align: center; text-transform: uppercase; letter-spacing: 1px;">🏆 REFERRAL CONTEST</h2>
+      
+      <!-- 1. မိမိရဲ့ referral count ပြသမယ့် Box -->
+      <div class="admin-box" style="text-align: center; margin-bottom: 14px;">
+        <p style="font-size: 0.9rem; color: #8a92b0;">👤 YOUR REFERRAL COUNT</p>
+        <div style="font-size: 2rem; font-weight: bold; color: #3bccff;" id="myReferralCount">0</div>
+      </div>
+
+      <!-- 2. Dynamic ပြောင်းလဲမယ့် Leaderboard Container -->
+      <div id="leaderboardContainer" style="background: #13142b; border: 1px solid #232540; border-radius: 18px; padding: 25px 15px; text-align: center; margin-bottom: 14px; box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.02);">
+        <p style="text-align:center; color:#8a92b0;">⏳ Loading Leaderboard...</p>
+      </div>
+
+      <!-- 3. Contest Rules Info -->
+      <div class="admin-box" style="font-size: 0.8rem; color: #8a92b0; line-height: 1.6; padding: 15px; background: #13142b; border: 1px solid #232540; border-radius: 12px;">
+        <b style="color: #3bccff; font-size: 0.85rem; display: block; margin-bottom: 8px;">📌 CONTEST RULES & INFO</b>
+        • <b>Prize Pool:</b> 1st Place: <span style="color:#ffd700; font-weight:bold;">1.0 TON</span> | 2nd Place: <span style="color:#fff; font-weight:bold;">0.3 TON</span> | 3rd Place: <span style="color:#cd7f32; font-weight:bold;">0.1 TON</span><br>
+        • <b>Minimum Requirement:</b> You must invite at least <b>100+ active friends</b> to qualify for the leaderboard ranking.<br>
+        • <b>Duration:</b> The contest runs on a <b>monthly basis</b>. All scores and rankings will automatically reset at the end of each month.<br>
+        • <b>Anti-Cheat:</b> Any fake, bot, or self-referred accounts will be automatically disqualified from receiving rewards.
+      </div>
+    </div>
+
+    <!-- === Wallet Tab === -->
     <div id="tab-wallet" class="tab-content">
       <div class="admin-box">
         <div style="text-align: center; margin-bottom: 20px;">
@@ -128,21 +156,24 @@
       </div>
     </div>
 
+    <!-- === Tab Bar Navigation === -->
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="tasks"><span>📺</span><span>Tasks</span></button>
       <button class="tab-btn" data-tab="refs"><span>💎</span><span>Refs</span></button>
+      <button class="tab-btn" data-tab="leaderboard"><span>🏆</span><span>Contest</span></button>
       <button class="tab-btn" data-tab="wallet"><span>💼</span><span>Wallet</span></button>
     </div>
+
   </div>
+
 
   <script>
     // ======================== သင်၏ Netlify Site URL ထည့်ပါ ========================
-    const NETLIFY_URL = 'https://your-site.netlify.app'; // <-- ဒီနေရာတွင် သင့် Netlify URL အတိအကျထည့်ပါ
-    // =============================================================================
+    const NETLIFY_URL = 'https://golden-cendol-4dc211.netlify.app'; 
 
-    const ADSGRAM_BLOCK_ID_OLD = "37195";   
+    const ADSGRAM_BLOCK_ID_OLD = "37709";   
     const ADSGRAM_BLOCK_ID_NEW = "int-37376"; 
-    const ADSTERRA_DIRECT_LINK = "https://potterynaggingformerly.com/r95xxkue6r?key=cde20067d822c42373a4ea5deb13d66a";
+    const ADSTERRA_DIRECT_LINK = "https://potterynaggingformerly.com/n6fbhya4qv?key=91fce56af9fe97ff979f42cca26e4314";
     const REWARD_PER_AD = 0.0001;
     const REFERRAL_REWARD = 0.01; 
     const MAX_DAILY_EARN = 50;   
@@ -179,7 +210,7 @@
         const msgEl = document.getElementById('refRewardMessage');
         if (msgEl) {
           msgEl.style.display = 'block';
-          msgEl.innerText = `🎉 Invitation bonus  +${amount} USDT received. `;
+          msgEl.innerText = `🎉 Invitation bonus +${amount} USDT received.`;
           setTimeout(() => { msgEl.style.display = 'none'; }, 5000);
         }
       }
@@ -255,14 +286,34 @@
       else if (status === 'error') { indicator.classList.add('sdk-error'); if(hint) hint.style.display = 'block'; }
     }
 
-    // ========== ဖိတ်ခေါ်မှုဆု (Local အတွက်ပဲ) ==========
     async function processReferral(referrerId) {
       if (referrerId === currentUserId) return;
       const processedKey = getStorageKey('app_referral_processed');
       if (safeGetItem(processedKey, '') === referrerId) return;
-      // Local မှာပဲ reward ထည့်မယ် (Backend မရှိတော့လို့)
       safeSetItem(processedKey, referrerId);
       addBalance(REFERRAL_REWARD, 'referral');
+
+      const countKey = getStorageKey('app_referral_count');
+      const currentCount = parseInt(safeGetItem(countKey, '0'), 10);
+      safeSetItem(countKey, (currentCount + 1).toString());
+
+      try {
+        let currentUsername = "Anonymous";
+        if (window.Telegram?.WebApp?.initDataUnsafe?.user?.username) {
+          currentUsername = "@" + window.Telegram.WebApp.initDataUnsafe.user.username;
+        }
+        
+        await fetch(`${NETLIFY_URL}/.netlify/functions/leaderboard`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId: referrerId, 
+            username: currentUsername
+          })
+        });
+      } catch (e) {
+        console.log('Leaderboard update error:', e);
+      }
     }
 
     async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT) {
@@ -296,7 +347,7 @@
     }
 
     function setAdsgramButtonPending(pending) {
-      isAdsgramPending = pending;
+      isAdsgramPending = pending; // ✅ ဒီစာကြောင်းက အဓိက ပြင်ဆင်ချက်ပါ။ pending state ကို update လုပ်ပေးပါတယ်။
       const btnOld = document.getElementById('adsgramBtn');
       const btnNew = document.getElementById('adsgramBtnNew');
       const txtOld = document.getElementById('adsgramBtnText');
@@ -378,7 +429,6 @@
       return false;
     }
 
-    // ========== အလိုအလျောက်ငွေထုတ်ယူခြင်း (Netlify Function မှတဆင့်) ==========
     async function requestWithdraw() {
       if (isWithdrawPending) {
         showStatus('withdrawStatus', "⏳ Withdrawal request is being processed...", false, 3000);
@@ -432,8 +482,6 @@
       btn.innerText = "⏳ Sending payment...";
       showStatus('withdrawStatus', "⏳ Processing...", false, 0);
       
-      console.log(`[Withdraw] Starting payout: userId=${currentUserId}, amount=${amount}, address=${address.substring(0,10)}...`);
-      
       try {
         const resp = await fetchWithTimeout(`${NETLIFY_URL}/.netlify/functions/withdraw`, {
           method: 'POST',
@@ -442,7 +490,6 @@
         }, FETCH_TIMEOUT);
         
         const data = await resp.json();
-        console.log('[Withdraw] Netlify function response:', data);
         
         if (data.success) {
           deductBalance(amount);
@@ -453,7 +500,6 @@
           throw new Error(data.message || 'Payout failed. Please try again.');
         }
       } catch (e) {
-        console.error('[Withdraw] Error:', e.message);
         let errorMsg = e.message;
         if (errorMsg.includes('timed out')) {
           errorMsg = '⏱️ Server not responding. Please try again later.';
@@ -465,11 +511,97 @@
         isWithdrawPending = false;
         btn.disabled = false;
         btn.innerText = "CONFIRM WITHDRAWAL";
-        console.log('[Withdraw] Process completed.');
       }
     }
 
-    // ========== App Initialization ==========
+    function updateMyReferralCount() {
+      const countKey = getStorageKey('app_referral_count');
+      const count = safeGetItem(countKey, '0');
+      const el = document.getElementById('myReferralCount');
+      if (el) el.innerText = count;
+    }
+
+    async function loadLeaderboard() {
+      const container = document.getElementById('leaderboardContainer');
+      if (!container) return;
+      
+      container.innerHTML = '<p style="text-align:center; color:#8a92b0;">⏳ Loading Leaderboard...</p>';
+      
+      try {
+        const resp = await fetch(`${NETLIFY_URL}/.netlify/functions/leaderboard`);
+        const data = await resp.json();
+        
+        if (!data.success || !data.leaderboard || data.leaderboard.length === 0) {
+          container.innerHTML = '<p style="text-align:center; color:#8a92b0;">🚀 No data yet. Be the first!</p>';
+          return;
+        }
+        
+        const lb = data.leaderboard; 
+        
+        let html = `
+          <p style="color: #8a92b0; font-size: 0.85rem; margin-bottom: 25px;">🥇 Top Invite Winners of the Month 🥇</p>
+          <div style="display: flex; justify-content: space-around; align-items: flex-end; margin-top: 10px;">
+        `;
+        
+        if (lb[1]) {
+          html += `
+            <div style="display: flex; flex-direction: column; align-items: center; width: 30%;">
+              <span style="font-size: 1.8rem; filter: drop-shadow(0 4px 8px rgba(255,255,255,0.2));">🥈</span>
+              <span style="font-size: 0.85rem; font-weight: bold; color: #f0f0f0; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${lb[1].username || 'Anonymous'}</span>
+              <span style="font-size: 0.8rem; color: #aaa; margin-top: 2px;">(${lb[1].count} refs)</span>
+              <span style="font-size: 0.85rem; color: #3bccff; font-weight: bold; margin-top: 2px;">0.3 TON</span>
+              <div style="background: linear-gradient(0deg, #2d3142 0%, #4f5d75 100%); width: 100%; height: 45px; border-radius: 8px 8px 0 0; margin-top: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff;">2</div>
+            </div>
+          `;
+        }
+        
+        if (lb[0]) {
+          html += `
+            <div style="display: flex; flex-direction: column; align-items: center; width: 35%; position: relative; bottom: 5px;">
+              <span style="font-size: 2.5rem; filter: drop-shadow(0 4px 10px rgba(255,215,0,0.4));">👑</span>
+              <span style="font-size: 0.95rem; font-weight: bold; color: #ffd700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${lb[0].username || 'Anonymous'}</span>
+              <span style="font-size: 0.85rem; color: #aaa; margin-top: 2px;">(${lb[0].count} refs)</span>
+              <span style="font-size: 0.95rem; color: #22c55e; font-weight: bold; margin-top: 2px;">1.0 TON</span>
+              <div style="background: linear-gradient(0deg, #8a640f 0%, #ffd700 100%); width: 100%; height: 70px; border-radius: 8px 8px 0 0; margin-top: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; box-shadow: 0 0 15px rgba(255,215,0,0.2);">1</div>
+            </div>
+          `;
+        }
+        
+        if (lb[2]) {
+          html += `
+            <div style="display: flex; flex-direction: column; align-items: center; width: 30%;">
+              <span style="font-size: 1.8rem; filter: drop-shadow(0 4px 8px rgba(184,115,51,0.2));">🥉</span>
+              <span style="font-size: 0.85rem; font-weight: bold; color: #f0f0f0; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${lb[2].username || 'Anonymous'}</span>
+              <span style="font-size: 0.8rem; color: #aaa; margin-top: 2px;">(${lb[2].count} refs)</span>
+              <span style="font-size: 0.85rem; color: #3bccff; font-weight: bold; margin-top: 2px;">0.1 TON</span>
+              <div style="background: linear-gradient(0deg, #4a2c11 0%, #cd7f32 100%); width: 100%; height: 30px; border-radius: 8px 8px 0 0; margin-top: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff;">3</div>
+            </div>
+          `;
+        }
+        
+        html += `</div>`;
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = '<p style="text-align:center; color:#ef4444;">❌ Failed to load leaderboard</p>';
+      }
+    }
+
+    function setupTabNavigation() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const target = this.dataset.tab;
+          document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
+          this.classList.add('active');
+          document.getElementById(`tab-${target}`).classList.add('active');
+
+          if (target === 'leaderboard') {
+            updateMyReferralCount();
+            loadLeaderboard(); 
+          }
+        });
+      });
+    }
+
     function initApp() {
       if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.ready(); 
@@ -480,10 +612,8 @@
           let displayName = initData.user.username ? "@" + initData.user.username : (initData.user.first_name || "User");
           document.getElementById('topMarqueeText').innerText = `🙋🏻‍♂️ ${displayName} 🎁Grid 📺Zenith_bot🤑 (ID: ${currentUserId})`;
         }
-        // start_param ကို ဖမ်းပြီး referral processing
         if (initData?.start_param) {
           const referrerId = initData.start_param;
-          console.log('Referral detected:', referrerId);
           setTimeout(() => { processReferral(referrerId); }, 800);
         }
       }
@@ -491,8 +621,7 @@
       document.getElementById('displayUserId').innerText = currentUserId;
 
       userBalance = parseFloat(safeGetItem(getStorageKey('app_usdt_balance'), '0')) || 0;
-      // Referral link ကို ?startapp= နဲ့ ပြောင်းထားသည်
-      document.getElementById('refLink').value = `https://t.me/xgjcxp_bot?startapp=${currentUserId}`;
+      document.getElementById('refLink').value = `https://t.me/get_ton_for_free_every_day_bot?startapp=${currentUserId}`;
 
       document.getElementById('copyRefBtn').addEventListener('click', async () => {
         try {
@@ -508,22 +637,14 @@
 
       updateSdkIndicator('loading');
       if (!tryInitAdsgramSDK()) { adsgramRetryCount = 0; checkAdsgramSDK(); }
-      
-      console.log('[App] Initialized. userId:', currentUserId, 'balance:', userBalance);
-    }
-
-    function setupTabNavigation() {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const target = this.dataset.tab;
-          document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
-          this.classList.add('active');
-          document.getElementById(`tab-${target}`).classList.add('active');
-        });
-      });
     }
 
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', initApp) : initApp();
-  </script>
+    
+    
+    
+  </script>  
+  
+  <script src="https://potterynaggingformerly.com/fd/91/7c/fd917cd3ca85a253cebb9a05277d1e16.js"></script>
 </body>
 </html>
